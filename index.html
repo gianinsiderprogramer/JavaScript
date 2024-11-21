@@ -3,13 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Cuotas</title>
+    <title>Calculadora de Cuotas - PreEntrega 2 Navas</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-    
-    <h1> Pre Entrega 1 - Navas</h1>
+    <div class="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <header>
+        <div class="header-content">
+            <h1>Calculadora de Cuotas y Operaciones Financieras</h1>
+            <p>Realiza cálculos detallados sobre préstamos, simulaciones y operaciones matemáticas avanzadas.</p>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <section class="card">
+                <h2><i class="fas fa-calculator"></i> ¿Qué deseas hacer?</h2>
+                <p>Selecciona una de las opciones disponibles para realizar el cálculo:</p>
+                <div class="buttons">
+                    <button id="iniciar-btn"><i class="fas fa-play-circle"></i> Iniciar Calculadora</button>
+                    <button onclick="verHistorial()"><i class="fas fa-history"></i> Ver Historial</button>
+                    <button onclick="limpiarHistorial()"><i class="fas fa-trash-alt"></i> Limpiar Historial</button>
+                </div>
+            </section>
+
+            <section class="info-card">
+                <h2><i class="fas fa-cogs"></i> Funciones disponibles:</h2>
+                <ul>
+                    <li><strong>Cálculo de Cuotas:</strong> Calcula el monto de la cuota mensual de un préstamo.</li>
+                    <li><strong>Historial de Cálculos:</strong> Guarda y consulta el historial de tus cálculos.</li>
+                    <li><strong>Simulaciones Múltiples:</strong> Realiza simulaciones con diferentes tasas y cuotas.</li>
+                    <li><strong>Amortización Completa:</strong> Genera una tabla con los pagos mes a mes del préstamo.</li>
+                    <li><strong>Tasas Variables:</strong> Calcula préstamos con tasas que cambian a lo largo del tiempo.</li>
+                </ul>
+            </section>
+
+            <section class="about">
+                <h2><i class="fas fa-info-circle"></i> Acerca de este proyecto</h2>
+                <p>Este proyecto es una calculadora interactiva desarrollada para ayudar en el cálculo de cuotas de préstamos y la simulación de diferentes escenarios financieros. Usando JavaScript, HTML y CSS, puedes calcular cuotas, realizar simulaciones y ver el historial de tus cálculos.</p>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>Desarrollado por <strong>Gianmarco Navas</strong> - <a href="https://github.com/gianinsiderprogramer">GitHub</a></p>
+        </div>
+    </footer>
 
     <script src="script.js"></script>
-
 </body>
 </html>
+
