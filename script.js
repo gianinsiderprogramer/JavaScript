@@ -1,74 +1,78 @@
-let historialCuotas = [];
-let historialOperacionesAvanzadas = [];
-let simulacionesResultados = [];
+const DOMSelectors = {
+    calcularCuotasBtn: document.getElementById('calcular-cuotas-btn'),
+    verHistorialBtn: document.getElementById('ver-historial-btn'),
+    limpiarHistorialBtn: document.getElementById('limpiar-historial-btn'),
+    tablaAmortizacionBtn: document.getElementById('tabla-amortizacion-btn'),
+    tasasVariablesBtn: document.getElementById('tasas-variables-btn'),
+    simulacionesBtn: document.getElementById('simulaciones-btn'),
+    estadisticasBtn: document.getElementById('estadisticas-btn'),
+    output: document.getElementById('output'),
+    inputForm: document.getElementById('input-form'),
+    inputSection: document.getElementById('input-section'),
+    submitBtn: document.getElementById('submit-btn'),
+    loadingOverlay: document.getElementById('loading-overlay'),
+};
+
+let historialCuotas = JSON.parse(localStorage.getItem('historialCuotas')) || [];
+let simulacionesResultados = JSON.parse(localStorage.getItem('simulacionesResultados')) || [];
+
+function guardarHistorial() {
+    localStorage.setItem('historialCuotas', JSON.stringify(historialCuotas));
+}
+
+function guardarSimulaciones() {
+    localStorage.setItem('simulacionesResultados', JSON.stringify(simulacionesResultados));
+}
+
+function toggleLoading(state) {
+    const overlay = DOMSelectors.loadingOverlay;
+    if (state) {
+        overlay.classList.add('active');
+    } else {
+        overlay.classList.remove('active');
+    }
+}
+
+function mostrarFormulario(campos, callback) {
+    DOMSelectors.inputForm.innerHTML = '';
+    DOMSelectors.inputSection.style.display = 'block';
+
+    campos.forEach(({ label, type, id, max }) => {
+        const fieldWrapper = document.createElement('div');
+        const fieldLabel = document.createElement('label');
+        const fieldInput = document.createElement('input');
+
+        fieldLabel.textContent = label;
+        fieldInput.type = type;
+        fieldInput.id = id;
+        fieldInput.max = max || '';
+        fieldInput.required = true;
+
+        fieldWrapper.appendChild(fieldLabel);
+        fieldWrapper.appendChild(fieldInput);
+        DOMSelectors.inputForm.appendChild(fieldWrapper);
+    });
+
+    DOMSelectors.submitBtn.onclick = () => {
+        const valores = {};
+        campos.forEach(({ id, type }) => {
+            const valor = document.getElementById(id).value;
+            valores[id] = type === 'number' ? parseFloat(valor) : valor;
+        });
+
+        DOMSelectors.inputSection.style.display = 'none';
+        callback(valores);
+    };
+}
+
+function updateOutput(content) {
+    DOMSelectors.output.innerHTML = ''; 
+    DOMSelectors.output.appendChild(content); 
+}
 
 function calcularCuota(monto, cuotas, tasaInteres) {
     const tasaMensual = tasaInteres / 100 / 12;
     return monto * (tasaMensual * Math.pow(1 + tasaMensual, cuotas)) / (Math.pow(1 + tasaMensual, cuotas) - 1);
-}
-
-function solicitarEntrada(mensaje, esEntero = false, max = null) {
-    let valor;
-    do {
-        valor = esEntero ? parseInt(prompt(mensaje)) : parseFloat(prompt(mensaje));
-        if (isNaN(valor) || valor <= 0 || (max !== null && valor > max)) {
-            alert(`⚠️ Entrada no válida. Por favor, ingrese un valor numérico positivo${max ? ` menor o igual a ${max}` : ""}.`);
-        }
-    } while (isNaN(valor) || valor <= 0 || (max !== null && valor > max));
-    return valor;
-}
-
-function mostrarResultados(cuota, totalPagado, interesesTotales) {
-    const fecha = new Date().toLocaleString();
-    const resultado = `
-🔹 Resultados del cálculo (${fecha}) 🔹
-Cuota mensual: $${cuota.toFixed(2)}
-Total a pagar: $${totalPagado.toFixed(2)}
-Intereses totales: $${interesesTotales.toFixed(2)}
------------------------------------
-    `;
-    alert(resultado);
-    historialCuotas.push({ fecha, detalle: resultado });
-}
-
-function verHistorial() {
-    if (historialCuotas.length === 0 && historialOperacionesAvanzadas.length === 0) {
-        alert("⚠️ No hay cálculos previos.");
-    } else {
-        const cuotasHistorial = historialCuotas.map(h => h.detalle).join("\n");
-        const operacionesHistorial = historialOperacionesAvanzadas.map(h => h.detalle).join("\n");
-
-        alert(`
-📜 Historial de cálculos de cuotas:
-${cuotasHistorial}
-
-📜 Historial de operaciones matemáticas avanzadas:
-${operacionesHistorial}
-        `);
-    }
-}
-
-function limpiarHistorial() {
-    historialCuotas = [];
-    historialOperacionesAvanzadas = [];
-    alert("✅ Historial limpiado.");
-}
-
-function mostrarAmortizacionCompleta(monto, cuotas, tasaInteres) {
-    const tasaMensual = tasaInteres / 100 / 12;
-    const cuota = calcularCuota(monto, cuotas, tasaInteres);
-    let saldoRestante = monto;
-    let tabla = "📊 Tabla de Amortización 📊\nMes\tCuota\tIntereses\tCapital\tSaldo\n";
-
-    for (let i = 1; i <= cuotas; i++) {
-        const interes = saldoRestante * tasaMensual;
-        const capital = cuota - interes;
-        saldoRestante -= capital;
-
-        tabla += `${i}\t$${cuota.toFixed(2)}\t$${interes.toFixed(2)}\t$${capital.toFixed(2)}\t$${saldoRestante.toFixed(2)}\n`;
-    }
-    alert(tabla);
-    historialCuotas.push({ fecha: new Date().toLocaleString(), detalle: tabla });
 }
 
 function calcularConTasasVariables(monto, cuotas, tasaInicial, tasaCambio, mesCambio) {
@@ -76,7 +80,7 @@ function calcularConTasasVariables(monto, cuotas, tasaInicial, tasaCambio, mesCa
     const saldoRestante = monto * (Math.pow(1 + (tasaInicial / 100 / 12), mesCambio) - 1) / (Math.pow(1 + (tasaInicial / 100 / 12), mesCambio) - 1);
     const cuotaFinal = calcularCuota(saldoRestante, cuotas - mesCambio, tasaCambio);
 
-    alert(`
+    updateOutput(`
 🔹 Resultados con tasas variables 🔹
 Cuota inicial (Tasa ${tasaInicial}%): $${cuotaInicial.toFixed(2)} por ${mesCambio} meses.
 Cuota final (Tasa ${tasaCambio}%): $${cuotaFinal.toFixed(2)} por ${cuotas - mesCambio} meses.
@@ -84,139 +88,192 @@ Cuota final (Tasa ${tasaCambio}%): $${cuotaFinal.toFixed(2)} por ${cuotas - mesC
     `);
 }
 
-function realizarSimulacion(monto, cuotas, tasas, cuotasSimulacion) {
-    let simulaciones = [];
-    tasas.forEach(tasa => {
-        cuotasSimulacion.forEach(cuota => {
-            const cuotaMensual = calcularCuota(monto, cuota, tasa);
-            const totalPagado = cuotaMensual * cuota;
-            const interesesTotales = totalPagado - monto;
+function realizarSimulaciones(monto, cuotasSimulacion, tasas) {
+    const simulaciones = tasas.flatMap(tasa => {
+        return cuotasSimulacion.map(cuotas => {
+            const cuotaMensual = calcularCuota(monto, cuotas, tasa);
+            const totalPagado = cuotaMensual * cuotas;
+            const intereses = totalPagado - monto;
 
-            simulaciones.push({
-                tasa,
-                cuotas: cuota,
-                cuotaMensual: cuotaMensual.toFixed(2),
-                totalPagado: totalPagado.toFixed(2),
-                interesesTotales: interesesTotales.toFixed(2),
-            });
+            return { tasa, cuotas, cuotaMensual, totalPagado, intereses };
         });
     });
 
     simulacionesResultados = simulaciones;
-    let simulacionTexto = "📊 Simulaciones 📊\nTasa de Interés | Cuotas | Cuota Mensual | Total Pagado | Intereses Totales\n";
-    simulaciones.forEach(sim => {
-        simulacionTexto += `${sim.tasa}% | ${sim.cuotas} | $${sim.cuotaMensual} | $${sim.totalPagado} | $${sim.interesesTotales}\n`;
-    });
+    guardarSimulaciones(); 
 
-    alert(simulacionTexto);
+    const resultadosTexto = simulaciones.map(sim => `
+Tasa: ${sim.tasa}% | Cuotas: ${sim.cuotas}
+Cuota Mensual: $${sim.cuotaMensual.toFixed(2)}
+Total Pagado: $${sim.totalPagado.toFixed(2)}
+Intereses: $${sim.intereses.toFixed(2)}
+----------------------------------
+    `).join('\n');
+
+    updateOutput(`📊 Resultados de simulaciones 📊\n${resultadosTexto}`);
 }
 
-function obtenerEstadisticas() {
+DOMSelectors.calcularCuotasBtn.addEventListener('click', () => {
+    mostrarFormulario([
+        { label: 'Monto Total:', type: 'number', id: 'monto' },
+        { label: 'Número de Cuotas:', type: 'number', id: 'cuotas', max: 360 },
+        { label: 'Tasa de Interés (%):', type: 'number', id: 'tasaInteres', max: 100 },
+    ], ({ monto, cuotas, tasaInteres }) => {
+        const cuota = calcularCuota(monto, cuotas, tasaInteres);
+        const totalPagado = cuota * cuotas;
+        const interesesTotales = totalPagado - monto;
+
+        historialCuotas.push({ monto, cuotas, tasaInteres, totalPagado, interesesTotales });
+        guardarHistorial(); 
+
+        updateOutput(`
+Cuota mensual: $${cuota.toFixed(2)}
+Total a pagar: $${totalPagado.toFixed(2)}
+Intereses totales: $${interesesTotales.toFixed(2)}
+        `);
+    });
+});
+
+DOMSelectors.verHistorialBtn.addEventListener('click', () => {
     if (historialCuotas.length === 0) {
-        alert("⚠️ No hay datos suficientes para calcular estadísticas.");
+        updateOutput("⚠️ No hay cálculos previos.");
         return;
     }
 
-    let totalPagado = 0;
-    let totalIntereses = 0;
-    let totalCuotas = 0;
+    const historial = historialCuotas.map((entry, index) => `
+#${index + 1} - Monto: $${entry.monto}, Cuotas: ${entry.cuotas}, Tasa: ${entry.tasaInteres}%
+    Total Pagado: $${entry.totalPagado.toFixed(2)}
+    Intereses Totales: $${entry.interesesTotales.toFixed(2)}
+    `).join("\n");
 
-    historialCuotas.forEach(h => {
-        const cuotas = h.detalle.match(/(\d+\.?\d*)/g);
-        totalCuotas += parseFloat(cuotas[0]);
-        totalPagado += parseFloat(cuotas[1]);
-        totalIntereses += parseFloat(cuotas[2]);
-    });
+    updateOutput(`📜 Historial de cálculos:\n${historial}`);
+});
 
-    const promedioCuotas = totalCuotas / historialCuotas.length;
-    const promedioTotalPagado = totalPagado / historialCuotas.length;
-    const promedioIntereses = totalIntereses / historialCuotas.length;
+DOMSelectors.limpiarHistorialBtn.addEventListener('click', () => {
+    historialCuotas = [];
+    localStorage.removeItem('historialCuotas'); 
+    updateOutput("✅ Historial limpiado.");
+});
 
-    alert(`
-📊 Estadísticas del historial 📊
-Promedio de cuotas: ${promedioCuotas.toFixed(2)}
-Promedio de total pagado: $${promedioTotalPagado.toFixed(2)}
-Promedio de intereses totales: $${promedioIntereses.toFixed(2)}
-    `);
-}
-
-function main() {
-    let continuar = true;
-    while (continuar) {
-        const opcion = prompt(`
-🔹 Menú Principal 🔹
-1. Realizar un cálculo de cuotas
-2. Ver historial de cálculos
-3. Limpiar historial
-4. Mostrar tabla de amortización completa
-5. Calcular con tasas variables
-6. Realizar simulaciones múltiples
-7. Obtener estadísticas del historial
-8. Salir
-Seleccione una opción (1, 2, 3, 4, 5, 6, 7 o 8):
-        `);
-
-        switch (opcion) {
-            case '1':
-                const monto = solicitarEntrada("Ingrese el monto total:");
-                const cuotas = solicitarEntrada("Ingrese el número de cuotas (entero):", true, 360); // Máximo 30 años
-                const tasaInteres = solicitarEntrada("Ingrese la tasa de interés (%):", false, 100);
-
-                const cuota = calcularCuota(monto, cuotas, tasaInteres);
-                const totalPagado = cuota * cuotas;
-                const interesesTotales = totalPagado - monto;
-
-                mostrarResultados(cuota, totalPagado, interesesTotales);
-                break;
-
-            case '2':
-                verHistorial();
-                break;
-
-            case '3':
-                limpiarHistorial();
-                break;
-
-            case '4':
-                const montoAmortizacion = solicitarEntrada("Ingrese el monto total:");
-                const cuotasAmortizacion = solicitarEntrada("Ingrese el número de cuotas (entero):", true, 360);
-                const tasaAmortizacion = solicitarEntrada("Ingrese la tasa de interés (%):", false, 100);
-
-                mostrarAmortizacionCompleta(montoAmortizacion, cuotasAmortizacion, tasaAmortizacion);
-                break;
-
-            case '5':
-                const montoTasas = solicitarEntrada("Ingrese el monto total:");
-                const cuotasTasas = solicitarEntrada("Ingrese el número total de cuotas (entero):", true, 360);
-                const tasaInicial = solicitarEntrada("Ingrese la tasa inicial (%):", false, 100);
-                const tasaCambio = solicitarEntrada("Ingrese la tasa posterior (%):", false, 100);
-                const mesCambio = solicitarEntrada("Ingrese el mes en el que cambiará la tasa (entero):", true, cuotasTasas);
-
-                calcularConTasasVariables(montoTasas, cuotasTasas, tasaInicial, tasaCambio, mesCambio);
-                break;
-
-            case '6':
-                const tasasSimulacion = [5, 10, 15]; 
-                const cuotasSimulacion = [12, 24, 36]; 
-                const montoSimulacion = solicitarEntrada("Ingrese el monto total:");
-                realizarSimulacion(montoSimulacion, cuotasSimulacion, tasasSimulacion, cuotasSimulacion);
-                break;
-
-            case '7':
-                obtenerEstadisticas();
-                break;
-
-            case '8':
-                alert("✅ Gracias por usar la calculadora de cuotas. ¡Hasta la próxima!");
-                continuar = false;
-                break;
-
-            default:
-                alert("⚠️ Opción no válida. Por favor, elija una opción válida.");
-        }
+function updateOutput(content) {
+    if (typeof content === "string") {
+        DOMSelectors.output.textContent = content; 
+    } else if (content instanceof HTMLElement) {
+        DOMSelectors.output.innerHTML = ''; 
+        DOMSelectors.output.appendChild(content);
+    } else {
+        console.error("El contenido proporcionado no es válido:", content);
     }
 }
 
-document.getElementById('iniciar-btn').addEventListener('click', function() {
-    main(); 
+DOMSelectors.calcularCuotasBtn.addEventListener('click', () => {
+    mostrarFormulario([
+        { label: 'Monto Total:', type: 'number', id: 'monto' },
+        { label: 'Número de Cuotas:', type: 'number', id: 'cuotas', max: 360 },
+        { label: 'Tasa de Interés (%):', type: 'number', id: 'tasaInteres', max: 100 },
+    ], ({ monto, cuotas, tasaInteres }) => {
+        const cuota = calcularCuota(monto, cuotas, tasaInteres);
+        const totalPagado = cuota * cuotas;
+        const interesesTotales = totalPagado - monto;
+
+        historialCuotas.push({ monto, cuotas, tasaInteres, totalPagado, interesesTotales });
+        guardarHistorial();
+
+        const resultado = `
+            Cuota mensual: $${cuota.toFixed(2)}
+            Total a pagar: $${totalPagado.toFixed(2)}
+            Intereses totales: $${interesesTotales.toFixed(2)}
+        `;
+        console.log("Resultado calculado:", resultado); 
+        updateOutput(resultado);
+    });
 });
+
+DOMSelectors.verHistorialBtn.addEventListener('click', () => {
+    if (historialCuotas.length === 0) {
+        updateOutput("⚠️ No hay cálculos previos.");
+        return;
+    }
+
+    const historial = historialCuotas.map((entry, index) => `
+#${index + 1} - Monto: $${entry.monto}, Cuotas: ${entry.cuotas}, Tasa: ${entry.tasaInteres}%
+    Total Pagado: $${entry.totalPagado.toFixed(2)}
+    Intereses Totales: $${entry.interesesTotales.toFixed(2)}
+    `).join("\n");
+
+    console.log("Historial cargado:", historial); 
+    updateOutput(`📜 Historial de cálculos:\n${historial}`);
+});
+
+DOMSelectors.simulacionesBtn.addEventListener('click', () => {
+    mostrarFormulario([
+        { label: 'Monto Total:', type: 'number', id: 'monto' },
+        { label: 'Número de Cuotas:', type: 'number', id: 'cuotas', max: 360 },
+    ], ({ monto }) => {
+        const tasas = [5, 10, 15];
+        const cuotasSimulacion = [12, 24, 36];
+
+        realizarSimulaciones(monto, cuotasSimulacion, tasas);
+
+        const simulacionesTexto = simulacionesResultados.map(sim => `
+Tasa: ${sim.tasa}% | Cuotas: ${sim.cuotas}
+Cuota Mensual: $${sim.cuotaMensual.toFixed(2)}
+Total Pagado: $${sim.totalPagado.toFixed(2)}
+Intereses: $${sim.intereses.toFixed(2)}
+----------------------------------
+        `).join('\n');
+
+        console.log("Simulaciones realizadas:", simulacionesTexto); 
+        updateOutput(`📊 Resultados de simulaciones 📊\n${simulacionesTexto}`);
+    });
+});
+
+DOMSelectors.tasasVariablesBtn.addEventListener('click', () => {
+    mostrarFormulario([
+        { label: 'Monto Total:', type: 'number', id: 'monto' },
+        { label: 'Número de Cuotas:', type: 'number', id: 'cuotas', max: 360 },
+        { label: 'Tasa de Interés Inicial (%):', type: 'number', id: 'tasaInicial', max: 100 },
+        { label: 'Tasa de Cambio (%):', type: 'number', id: 'tasaCambio', max: 100 },
+        { label: 'Mes de Cambio de Tasa:', type: 'number', id: 'mesCambio', max: 360 },
+    ], ({ monto, cuotas, tasaInicial, tasaCambio, mesCambio }) => {
+        if (mesCambio >= cuotas) {
+            updateOutput("⚠️ El mes de cambio debe ser menor al número total de cuotas.");
+            return;
+        }
+
+        const cuotaInicial = calcularCuota(monto, mesCambio, tasaInicial);
+        const saldoRestante = monto - (cuotaInicial * mesCambio);
+        const cuotaFinal = calcularCuota(saldoRestante, cuotas - mesCambio, tasaCambio);
+
+        const resultado = `
+🔹 Resultados con tasas variables 🔹
+Cuota inicial (Tasa ${tasaInicial}%): $${cuotaInicial.toFixed(2)} por ${mesCambio} meses.
+Cuota final (Tasa ${tasaCambio}%): $${cuotaFinal.toFixed(2)} por ${cuotas - mesCambio} meses.
+-----------------------------------
+`;
+        console.log("Resultados tasas variables:", resultado);
+        updateOutput(resultado);
+    });
+});
+
+function obtenerEstadisticas() {
+    if (simulacionesResultados.length === 0) {
+        updateOutput("⚠️ No hay simulaciones previas para generar estadísticas.");
+        return;
+    }
+
+    const totalSimulaciones = simulacionesResultados.length;
+    const interesesTotales = simulacionesResultados.reduce((acc, sim) => acc + sim.intereses, 0);
+    const promedioIntereses = interesesTotales / totalSimulaciones;
+    const estadisticas = `
+📊 Estadísticas de Simulaciones 📊
+Total de Simulaciones: ${totalSimulaciones}
+Intereses Totales: $${interesesTotales.toFixed(2)}
+Promedio de Intereses: $${promedioIntereses.toFixed(2)}
+----------------------------------
+`;
+    console.log("Estadísticas generadas:", estadisticas);
+    updateOutput(estadisticas);
+}
+
+DOMSelectors.estadisticasBtn.addEventListener('click', obtenerEstadisticas);
