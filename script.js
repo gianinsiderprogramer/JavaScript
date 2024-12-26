@@ -277,3 +277,51 @@ Promedio de Intereses: $${promedioIntereses.toFixed(2)}
 }
 
 DOMSelectors.estadisticasBtn.addEventListener('click', obtenerEstadisticas);
+
+const obtenerTasasBtn = document.getElementById('obtener-tasas-btn');
+
+document.addEventListener('DOMContentLoaded', () => {
+    const obtenerTasasBtn = document.getElementById('obtener-tasas-btn');
+    const resultadosDiv = document.getElementById('resultados');
+
+    async function obtenerTasasDeCambio() {
+        const apiKey = 'b624da22908890ad1ef7c498917c83a0'; 
+        const url = `http://data.fixer.io/api/latest?access_key=${apiKey}`;
+        
+        resultadosDiv.textContent = "Cargando tasas de cambio...";
+
+        try {
+            const respuesta = await fetch(url);
+            if (!respuesta.ok) throw new Error(`Error: ${respuesta.status}`);
+
+            const datos = await respuesta.json();
+            if (!datos.success) throw new Error(`Error en la API: ${datos.error.info}`);
+
+            const tasasRelevantes = ['USD', 'EUR', 'ARS']; 
+            const contenido = document.createElement('ul');
+
+            tasasRelevantes.forEach(moneda => {
+                const tasa = datos.rates[moneda];
+                if (tasa) {
+                    const li = document.createElement('li');
+                    li.textContent = `Tasa EUR/${moneda}: ${tasa.toFixed(2)}`;
+                    contenido.appendChild(li);
+                }
+            });
+
+            resultadosDiv.innerHTML = "";
+            resultadosDiv.appendChild(contenido);
+        } catch (error) {
+            console.error("Error al obtener tasas:", error);
+            resultadosDiv.textContent = `⚠️ Error al obtener tasas: ${error.message}`;
+        }
+    }
+
+    if (obtenerTasasBtn) {
+        obtenerTasasBtn.addEventListener('click', obtenerTasasDeCambio);
+    } else {
+        console.error("No se encontró el botón con el ID 'obtener-tasas-btn'.");
+    }
+});
+
+
